@@ -21,14 +21,14 @@ val random_foo : (random_state -> 'a1) ... (random_state -> 'aN) ->
 
 The following definitions are assumed to be in scope:
 
-```
+```ocaml
 type random_state
 (* State passed to the random generators. *)
 
 val random_case : int -> random_state -> int
-(* A function used to select a random variant field. The first argument is
-   the number of cases. The result must be in the range from 0 to the number
-   of cases minus one and should be uniformly distributed. *)
+(* A function used to select a random constructor or row field. The first
+   argument is the number of cases. The result must be in the range from 0
+   to the number of cases minus one and should be uniformly distributed. *)
 
 val random_case_30b : random_state -> int
 (* When fields are weighted (see below), this is used instead of
