@@ -66,8 +66,8 @@ val random_free_magma : (random_state -> 'a) -> random_state -> 'a free_magma
 ```
 
 However, there is a problem with the generated function.  By default all
-branches of the variant is equally probably, leading to a possibly diverging
-computation.  This can be fixed by adding weights to the fields:
+branches of the variant is equally probable, leading to a possibly diverging
+computation.  This can be fixed by weighing the constructors:
 
 ```ocaml
 type 'a free_magma =
