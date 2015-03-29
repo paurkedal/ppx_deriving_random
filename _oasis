@@ -1,0 +1,15 @@
+OASISFormat: 0.4
+Name: ppx_deriving_random
+Version: 0.1
+Synopsis: Syntax extension to generate random instances of types
+Authors: Petter A. Urkedal
+License: LGPL-3.0 with OCaml linking exception
+Plugins: DevFiles (0.4)
+BuildTools: ocamlbuild
+FilesAB: META.ab
+
+Library "ppx_deriving_random"
+  Path: .
+  Modules: Ppx_deriving_random
+  BuildDepends: ppx_deriving.api, ppx_tools.metaquot
+  CompiledObject: best

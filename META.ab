@@ -1,0 +1,9 @@
+version = "${pkg_version}"
+description = "[@@deriving random]"
+
+requires(-ppx_driver) = "ppx_deriving"
+ppxopt(-ppx_driver) = "ppx_deriving,./ppx_deriving_random.cma"
+requires(ppx_driver) = "ppx_deriving.api"
+archive(ppx_driver, byte) = "ppx_deriving_random.cma"
+archive(ppx_driver, native) = "ppx_deriving_random.cmxa"
+exists_if = "ppx_deriving_random.cma"
