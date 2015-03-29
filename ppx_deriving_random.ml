@@ -121,6 +121,11 @@ let cumulative get_attrs cs =
   fst @@ List.fold (fun (w, pcd) (acc, rem) -> (rem - w, pcd) :: acc, rem - w)
 		   cs ([], 1 lsl 30)
 
+let invalid_case =
+  Exp.case [%pat? i]
+    [%expr
+      failwith (Printf.sprintf "Value %d from random_case is out of range." i)]
+
 let rec expr_of_typ typ =
   let expr_of_rowfield = function
     | Rtag (label, _, true, []) -> Exp.variant label None
@@ -152,7 +157,7 @@ let rec expr_of_typ typ =
 	Exp.case (Pat.constant (Const_int j)) result in
     Exp.match_
       [%expr random_case [%e Exp.constant (Const_int (List.length cases))] rng]
-      (cases @ [Exp.case (Pat.any ()) [%expr assert false]])
+      (cases @ [invalid_case])
   | {ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc} ->
     let branch (w, field) cont =
       [%expr if w > [%e Exp.constant (Const_int w)]
@@ -181,11 +186,11 @@ let expr_of_type_decl ({ptype_loc = loc} as type_decl) =
 	when List.for_all (weight_is_one *< pcd_attributes) constrs ->
     let make_case j pcd =
       Exp.case (Pat.constant (Const_int j)) (expr_of_constr pcd) in
-    let cases = List.mapi make_case constrs
-	      @ [Exp.case (Pat.any ()) [%expr assert false]] in
-    let e_n = Exp.constant (Const_int (List.length cases)) in
+    let cases = List.mapi make_case constrs in
+    let case_count = Exp.constant (Const_int (List.length cases)) in
     [%expr fun rng ->
-	   [%e Exp.match_ [%expr random_case [%e e_n] rng] cases] ]
+	   [%e Exp.match_ [%expr random_case [%e case_count] rng]
+			  (cases @ [invalid_case])] ]
   | Ptype_variant cs, _ ->
     let branch (w, pcd) cont =
       [%expr if w > [%e Exp.constant (Const_int w)]
