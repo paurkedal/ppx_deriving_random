@@ -63,6 +63,10 @@ let tuple_opt = function
   | [arg] -> Some arg
   | args -> Some (Exp.tuple args)
 
+let get_random_fun attrs =
+  attrs |> Ppx_deriving.attr ~deriver "random"
+	|> Ppx_deriving.Arg.(get_attr ~deriver expr)
+
 let get_weight attrs =
   let conv = function
     | {pexp_desc = Pexp_constant (Const_int n)} -> `Ok (`Int n)
@@ -136,44 +140,46 @@ let rec expr_of_typ typ =
     | _ ->
       raise_errorf ~loc:typ.ptyp_loc "Cannot derive %s for %s."
 		   deriver (Ppx_deriving.string_of_core_type typ) in
-  match typ with
-  | [%type: unit] -> [%expr ()]
-  | {ptyp_desc = Ptyp_constr ({txt = lid}, typs); ptyp_attributes = attrs} ->
-    let f =
-      match attrs |> Ppx_deriving.attr ~deriver "random"
-		  |> Ppx_deriving.Arg.(get_attr ~deriver (fun x -> `Ok x)) with
-      | Some f -> f
-      | None ->
-	Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "random") lid)) in
-    let args =
-      List.map (fun typ -> [%expr fun rng -> [%e expr_of_typ typ]]) typs in
+  match get_random_fun typ.ptyp_attributes with
+  | Some f ->
+    let vars = Ppx_deriving.free_vars_in_core_type typ in
+    let args = List.map (fun name -> evar ("poly_" ^ name)) vars in
     app f (args @ [[%expr rng]])
-  | {ptyp_desc = Ptyp_tuple typs} -> Exp.tuple (List.map expr_of_typ typs)
-  | {ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc}
-	when List.for_all (weight_is_one *< rowfield_attributes) fields ->
-    let cases =
-      fields |> List.mapi @@ fun j field ->
-	let result = expr_of_rowfield field in
-	Exp.case (Pat.constant (Const_int j)) result in
-    Exp.match_
-      [%expr random_case [%e Exp.constant (Const_int (List.length cases))] rng]
-      (cases @ [invalid_case])
-  | {ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc} ->
-    let branch (w, field) cont =
-      [%expr if w > [%e Exp.constant (Const_int w)]
-	     then [%e expr_of_rowfield field]
-	     else [%e cont] ] in
-    begin match cumulative rowfield_attributes fields with
-    | [] -> assert false
-    | (w, field) :: fields ->
-      [%expr let w = random_case_30b rng in
-	     [%e List.fold branch fields (expr_of_rowfield field)]]
-    end
-  | {ptyp_desc = Ptyp_var name} -> [%expr [%e evar ("poly_" ^ name)] rng]
-  | {ptyp_desc = Ptyp_alias (typ, _)} -> expr_of_typ typ
-  | {ptyp_loc} ->
-    raise_errorf ~loc:ptyp_loc "Cannot derive %s for %s."
-		 deriver (Ppx_deriving.string_of_core_type typ)
+  | None ->
+    match typ with
+    | [%type: unit] -> [%expr ()]
+    | {ptyp_desc = Ptyp_constr ({txt = lid}, typs)} ->
+      let f =
+	Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix "random") lid)) in
+      let args =
+	List.map (fun typ -> [%expr fun rng -> [%e expr_of_typ typ]]) typs in
+      app f (args @ [[%expr rng]])
+    | {ptyp_desc = Ptyp_tuple typs} -> Exp.tuple (List.map expr_of_typ typs)
+    | {ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc}
+	  when List.for_all (weight_is_one *< rowfield_attributes) fields ->
+      let cases =
+	fields |> List.mapi @@ fun j field ->
+	  let result = expr_of_rowfield field in
+	  Exp.case (Pat.constant (Const_int j)) result in
+      Exp.match_
+	[%expr random_case [%e Exp.constant (Const_int (List.length cases))] rng]
+	(cases @ [invalid_case])
+    | {ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc} ->
+      let branch (w, field) cont =
+	[%expr if w > [%e Exp.constant (Const_int w)]
+	       then [%e expr_of_rowfield field]
+	       else [%e cont] ] in
+      begin match cumulative rowfield_attributes fields with
+      | [] -> assert false
+      | (w, field) :: fields ->
+	[%expr let w = random_case_30b rng in
+	       [%e List.fold branch fields (expr_of_rowfield field)]]
+      end
+    | {ptyp_desc = Ptyp_var name} -> [%expr [%e evar ("poly_" ^ name)] rng]
+    | {ptyp_desc = Ptyp_alias (typ, _)} -> expr_of_typ typ
+    | {ptyp_loc} ->
+      raise_errorf ~loc:ptyp_loc "Cannot derive %s for %s."
+		   deriver (Ppx_deriving.string_of_core_type typ)
 
 let expr_of_type_decl ({ptype_loc = loc} as type_decl) =
   let expr_of_constr pcd =
