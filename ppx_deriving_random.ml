@@ -235,7 +235,7 @@ let str_of_type ~options ~path type_decl =
 let () =
   Ppx_deriving.register @@
   Ppx_deriving.create deriver
-    ~core_type: (fun typ -> [%expr fun () -> [%e expr_of_typ typ]])
+    ~core_type: (fun typ -> [%expr fun rng -> [%e expr_of_typ typ]])
     ~type_decl_str: (fun ~options ~path type_decls ->
       [Str.value Recursive
 	(List.concat (List.map (str_of_type ~options ~path) type_decls))])
