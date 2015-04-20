@@ -63,9 +63,12 @@ let tuple_opt = function
   | [arg] -> Some arg
   | args -> Some (Exp.tuple args)
 
+let mapped_expr e =
+  `Ok (Ppx_deriving.mapper.Ast_mapper.expr Ppx_deriving.mapper e)
+
 let get_random_fun attrs =
   attrs |> Ppx_deriving.attr ~deriver "random"
-	|> Ppx_deriving.Arg.(get_attr ~deriver expr)
+	|> Ppx_deriving.Arg.(get_attr ~deriver mapped_expr)
 
 let get_weight attrs =
   let conv = function
@@ -141,10 +144,7 @@ let rec expr_of_typ typ =
       raise_errorf ~loc:typ.ptyp_loc "Cannot derive %s for %s."
 		   deriver (Ppx_deriving.string_of_core_type typ) in
   match get_random_fun typ.ptyp_attributes with
-  | Some f ->
-    let vars = Ppx_deriving.free_vars_in_core_type typ in
-    let args = List.map (fun name -> evar ("poly_" ^ name)) vars in
-    app f (args @ [[%expr rng]])
+  | Some f -> app f [[%expr rng]]
   | None ->
     match typ with
     | [%type: unit] -> [%expr ()]
