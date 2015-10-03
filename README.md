@@ -17,6 +17,26 @@ val random_foo : (random_state -> 'a1) ... (random_state -> 'aN) ->
                  random_state -> ('a1, ..., 'aN) foo
 ```
 
+## Installation
+
+If you use ``opam`` and don't mind adding another repo, you can install
+``ppx_deriving_random`` with
+
+```ocaml
+opam repo add paurkedal https://github.com/paurkedal/opam-repo-paurkedal.git
+opam install ppx_deriving_random
+```
+
+For manual installation from a fresh Git checkout, make sure you have OASIS
+and ``ppx_deriving``, then
+```shell
+oasis setup -setup-update dynamic
+ocaml setup.ml -configure --prefix your-prefix
+make
+make install
+```
+where ``your-prefix/lib`` is in your findlib path.
+
 ## Context
 
 The following definitions are assumed to be in scope:
