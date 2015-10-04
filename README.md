@@ -17,7 +17,7 @@ val random_foo : (random_state -> 'a1) ... (random_state -> 'aN) ->
                  random_state -> ('a1, ..., 'aN) foo
 ```
 
-## Installation
+## Installation and Usage
 
 If you use ``opam`` and don't mind adding another repo, you can install
 ``ppx_deriving_random`` with
@@ -35,7 +35,13 @@ ocaml setup.ml -configure --prefix your-prefix
 make
 make install
 ```
-where ``your-prefix/lib`` is in your findlib path.
+where ``your-prefix/lib`` is in your findlib path.  The syntax extension can
+now be enabled with ``-package ppx_deriving_random.ppx`` or by putting
+``package(ppx_deriving_random.ppx)`` in your ``_tags``.  To build the
+example:
+```shell
+ocamlfind ocamlopt -linkpkg -package ppx_deriving_random.ppx -package ppx_deriving.show free_magma.ml
+```
 
 ## Context
 
