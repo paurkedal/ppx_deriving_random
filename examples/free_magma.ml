@@ -9,8 +9,8 @@ let random_var rng = String.make 1 (Char.chr (Random.State.int rng 26 + 0x61))
 
 (* Type and random generator. *)
 type 'a free_magma =
-  | Fm_gen [@weight 3] of 'a
-  | Fm_mul [@weight 2] of 'a free_magma * 'a free_magma
+  | Fm_gen of 'a [@weight 3]
+  | Fm_mul of 'a free_magma * 'a free_magma [@weight 2]
   [@@deriving random, show]
 
 (* Test. *)
